@@ -34,6 +34,7 @@ async def create_new_group(payload: GroupCreate, current_user: UserRead = Depend
         id=str(uuid.uuid4()),
         name=payload.name.strip(),
         description=payload.description.strip() if payload.description else None,
+        currency=payload.currency,
         member_ids=[current_user.id],
     )
     return await create_group(group)

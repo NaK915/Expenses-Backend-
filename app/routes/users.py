@@ -3,8 +3,8 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.auth import get_current_user
-from app.models import UserRead
-from app.store import get_user, list_users
+from app.models import UserPreferencesUpdate, UserRead
+from app.store import get_user, list_users, update_user_preferences
 
 router = APIRouter()
 
@@ -17,6 +17,17 @@ async def get_users(current_user: UserRead = Depends(get_current_user)) -> List[
 @router.get("/users/me")
 async def get_profile(current_user: UserRead = Depends(get_current_user)) -> UserRead:
     return current_user
+
+
+@router.patch("/users/me")
+async def update_profile(
+    payload: UserPreferencesUpdate,
+    current_user: UserRead = Depends(get_current_user),
+) -> UserRead:
+    updated = await update_user_preferences(current_user.id, payload.preferred_currency)
+    if updated is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return updated
 
 
 @router.get("/users/{user_id}")

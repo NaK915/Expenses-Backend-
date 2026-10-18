@@ -59,6 +59,15 @@ async def list_users() -> List[UserRead]:
     return [UserRead(**_without_mongo_id(document)) async for document in cursor]
 
 
+async def update_user_preferences(user_id: str, preferred_currency: str) -> Optional[UserRead]:
+    result = await users_collection.find_one_and_update(
+        {"id": user_id},
+        {"$set": {"preferred_currency": preferred_currency}},
+        return_document=ReturnDocument.AFTER,
+    )
+    return UserRead(**_without_mongo_id(result)) if result else None
+
+
 async def get_group(group_id: str) -> Optional[GroupRead]:
     document = await groups_collection.find_one({"id": group_id})
     return GroupRead(**_without_mongo_id(document)) if document else None

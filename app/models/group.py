@@ -7,6 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field
 class GroupCreate(BaseModel):
     name: str
     description: Optional[str] = None
+    currency: str = Field(default="INR", pattern=r"^[A-Z]{3}$")
 
 
 class AddMemberRequest(BaseModel):
@@ -19,5 +20,6 @@ class GroupRead(BaseModel):
     id: str
     name: str
     description: Optional[str]
+    currency: str = Field(default="INR", pattern=r"^[A-Z]{3}$")
     member_ids: List[str]
     created_at: datetime = Field(default_factory=datetime.utcnow)

@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from app.auth import get_current_user
 from app.models import TransactionCreate, TransactionRead, TransactionUpdate, UserRead
 from app.routes.groups import require_group_member
+from app.services.expense_service import calculate_split_allocations
 from app.store import (
     create_transaction,
     delete_transaction,
@@ -38,6 +39,20 @@ async def create_group_transaction(
     elif payload.to_user_id is not None:
         raise HTTPException(status_code=400, detail="Only reimbursements can specify a recipient")
 
+    if payload.transaction_type == "expense":
+        try:
+            allocations = calculate_split_allocations(
+                payload.amount,
+                split_members,
+                payload.split_type,
+                payload.split_amounts,
+                payload.split_parts,
+            )
+        except (ValueError, ArithmeticError) as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+    else:
+        allocations = {}
+
     transaction = TransactionRead(
         id=str(uuid.uuid4()),
         group_id=group_id,
@@ -46,6 +61,9 @@ async def create_group_transaction(
         transaction_type=payload.transaction_type,
         paid_by=current_user.id,
         split_between=split_members,
+        split_type=payload.split_type if payload.transaction_type == "expense" else "equal",
+        split_amounts=allocations if payload.split_type == "amounts" else {},
+        split_parts=payload.split_parts if payload.split_type == "parts" else {},
         to_user_id=payload.to_user_id,
         category=payload.category.strip() if payload.category else None,
         notes=payload.notes.strip() if payload.notes else None,
@@ -72,11 +90,23 @@ async def edit_transaction(
     updates = payload.model_dump(exclude_unset=True, exclude_none=True)
     if "amount" in updates and updates["amount"] <= 0:
         raise HTTPException(status_code=400, detail="Amount must be greater than zero")
-    if "split_between" in updates:
-        split_members = list(dict.fromkeys(updates["split_between"] or group.member_ids))
-        if any(member_id not in group.member_ids for member_id in split_members):
-            raise HTTPException(status_code=400, detail="Every split member must belong to the group")
-        updates["split_between"] = split_members
+    split_members = list(dict.fromkeys(updates.get("split_between", transaction.split_between) or group.member_ids))
+    if any(member_id not in group.member_ids for member_id in split_members):
+        raise HTTPException(status_code=400, detail="Every split member must belong to the group")
+    split_type = updates.get("split_type", transaction.split_type)
+    split_amounts = updates.get("split_amounts", transaction.split_amounts)
+    split_parts = updates.get("split_parts", transaction.split_parts)
+    amount = updates.get("amount", transaction.amount)
+    try:
+        allocations = calculate_split_allocations(amount, split_members, split_type, split_amounts, split_parts)
+    except (ValueError, ArithmeticError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    updates.update({
+        "split_between": split_members,
+        "split_type": split_type,
+        "split_amounts": allocations if split_type == "amounts" else {},
+        "split_parts": split_parts if split_type == "parts" else {},
+    })
     if "to_user_id" in updates and updates["to_user_id"] not in group.member_ids:
         raise HTTPException(status_code=400, detail="Reimbursement recipient must belong to the group")
     if transaction.transaction_type == "expense" and "to_user_id" in updates:
