@@ -45,6 +45,7 @@ fall back to in-memory storage.
 - `POST /auth/register` — create an account and receive a JWT
 - `POST /auth/login` — authenticate and receive a JWT
 - `GET /auth/me` — current authenticated profile
+- `PATCH /users/me` — update preferred display currency
 - `GET /users` — authenticated user directory
 - `POST /groups` — create a group for the current user
 - `POST /groups/{group_id}/members` — add a member by email
@@ -53,6 +54,7 @@ fall back to in-memory storage.
 - `PATCH /transactions/{transaction_id}` — edit your own transaction
 - `DELETE /transactions/{transaction_id}` — delete your own transaction
 - `GET /groups/{group_id}/balances` — calculated balances
+- `GET /currencies/rates?base=INR&quote=USD` — current exchange-rate estimate
 - `GET /groups/{group_id}/settlements` — calculated settlement suggestions
 - `GET /health` — database health check
 - `GET /ready` — readiness check
@@ -62,5 +64,8 @@ fall back to in-memory storage.
 - MongoDB should be running at the URI configured in `.env`.
 - Data is stored in the `users`, `groups`, and `transactions` collections.
 - Expenses and reimbursements share the `transactions` model and collection.
+- New accounts default to INR. Groups choose one currency at creation; older records without currency fields default to INR.
+- Expenses support equal splits, exact per-member amounts, or weighted parts. Custom allocations are stored with each transaction and must sum to the expense total.
+- Exchange rates are fetched by the API from ExchangeRate-API's open endpoint when requested; converted figures are estimates and group balances remain in the group's currency.
 - Hugging Face model access requires a valid API token if the chosen model requires it.
 - The included LLM setup is a starter configuration and can be expanded for your app-specific logic.
