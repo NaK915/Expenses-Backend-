@@ -6,7 +6,7 @@ This project is a FastAPI backend boilerplate for the Expense Split application.
 
 - FastAPI application scaffold
 - MongoDB persistence using Motor collections
-- LangChain + Hugging Face integration
+- Local Hugging Face Transformers expense categorization
 - Health and readiness endpoints
 - Environment-based configuration
 
@@ -67,5 +67,6 @@ fall back to in-memory storage.
 - New accounts default to INR. Groups choose one currency at creation; older records without currency fields default to INR.
 - Expenses support equal splits, exact per-member amounts, or weighted parts. Custom allocations are stored with each transaction and must sum to the expense total.
 - Exchange rates are fetched by the API from ExchangeRate-API's open endpoint when requested; converted figures are estimates and group balances remain in the group's currency.
-- Hugging Face model access requires a valid API token if the chosen model requires it.
-- The included LLM setup is a starter configuration and can be expanded for your app-specific logic.
+- When an expense is created without a category, the backend classifies its title plus optional description using a local Transformers zero-shot classifier. The description is also displayed with the expense. A category selected by the user is kept as-is.
+- `HF_CATEGORY_MODEL` controls the classifier model and defaults to `facebook/bart-large-mnli`. Transformers downloads the model on first use and caches it locally; deployments should pre-cache model weights or allow the initial download.
+- Embeddings use local `HuggingFaceEmbeddings` and `HF_EMBEDDINGS_MODEL`; no Hugging Face API token is needed for either default public model.

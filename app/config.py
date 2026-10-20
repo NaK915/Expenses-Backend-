@@ -1,5 +1,5 @@
 from functools import lru_cache
-from typing import Literal, Optional
+from typing import Literal
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -15,8 +15,7 @@ class Settings(BaseSettings):
     mongodb_db_name: str = Field(default="expense_split")
     jwt_secret: str = Field(default="change-this-development-secret-please")
 
-    hf_api_token: Optional[str] = Field(default=None)
-    hf_model_name: str = Field(default="google/flan-t5-base")
+    hf_category_model: str = Field(default="facebook/bart-large-mnli")
     hf_embeddings_model: str = Field(default="sentence-transformers/all-MiniLM-L6-v2")
 
     log_level: str = Field(default="INFO")

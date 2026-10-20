@@ -18,7 +18,7 @@ class TransactionCreate(BaseModel):
     split_parts: Dict[str, float] = Field(default_factory=dict)
     to_user_id: Optional[str] = None
     category: Optional[str] = None
-    notes: Optional[str] = None
+    description: Optional[str] = None
 
 
 class TransactionUpdate(BaseModel):
@@ -30,7 +30,7 @@ class TransactionUpdate(BaseModel):
     split_parts: Optional[Dict[str, float]] = None
     to_user_id: Optional[str] = None
     category: Optional[str] = None
-    notes: Optional[str] = None
+    description: Optional[str] = None
 
 
 class TransactionRead(BaseModel):
@@ -46,6 +46,6 @@ class TransactionRead(BaseModel):
     split_parts: Dict[str, float] = Field(default_factory=dict)
     to_user_id: Optional[str] = None
     category: Optional[str] = None
-    notes: Optional[str] = None
+    description: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)

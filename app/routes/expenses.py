@@ -1,18 +1,18 @@
 import uuid
 from datetime import datetime
-from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
+from starlette.concurrency import run_in_threadpool
 
 from app.auth import get_current_user
 from app.models import TransactionCreate, TransactionRead, TransactionUpdate, UserRead
 from app.routes.groups import require_group_member
 from app.services.expense_service import calculate_split_allocations
+from app.services.llm import categorize_expense
 from app.store import (
     create_transaction,
     delete_transaction,
     get_transaction,
-    get_user,
     update_transaction,
 )
 
@@ -53,6 +53,14 @@ async def create_group_transaction(
     else:
         allocations = {}
 
+    category = payload.category.strip() if payload.category and payload.category.strip() else None
+    if payload.transaction_type == "expense" and category is None:
+        category = await run_in_threadpool(
+            categorize_expense,
+            payload.title,
+            payload.description or "",
+        )
+
     transaction = TransactionRead(
         id=str(uuid.uuid4()),
         group_id=group_id,
@@ -65,8 +73,8 @@ async def create_group_transaction(
         split_amounts=allocations if payload.split_type == "amounts" else {},
         split_parts=payload.split_parts if payload.split_type == "parts" else {},
         to_user_id=payload.to_user_id,
-        category=payload.category.strip() if payload.category else None,
-        notes=payload.notes.strip() if payload.notes else None,
+        category=category,
+        description=payload.description.strip() if payload.description else None,
         created_at=datetime.utcnow(),
         updated_at=datetime.utcnow(),
     )
