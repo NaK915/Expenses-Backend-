@@ -10,6 +10,10 @@ This project is a FastAPI backend boilerplate for the Expense Split application.
 - Health and readiness endpoints
 - Environment-based configuration
 
+### Frontend
+
+Frontend code for this project can be found here - [Expenses Frontend](https://github.com/NaK915/Expenses_Frontend)
+
 ## Setup
 
 1. Create a Python virtual environment:
